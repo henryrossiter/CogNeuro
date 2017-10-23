@@ -12,7 +12,11 @@ def getIndexes(num):
                 ret.append(count)
             count = count + 1
         return ret
-
+def sumActivity(sleepStartIndex,WakeIndex,subjectData):
+    tot = 0
+    for i in range(sleepStartIndex,WakeIndex+1):
+        tot = tot+ int(subjectData[i]['SleepWake'])
+    return tot
 def adjustSleepStart(reportedStart, subjectData, dayNumber):
     startIndex = getTimeIndex(reportedStart, subjectData, dayNumber)-1
     #print("startIndex: "+str(startIndex))
@@ -64,7 +68,7 @@ for f in files:
     num = int(f[3:f.find('_')])
     #find trial length
     days = getIndexes(num)
-    print('subject number: '+str(num)+' trial length: '+str(len(days))+' nights.')
+    print('subject number: '+str(num)+' trial length: '+str(len(days))+' nights.'+'\n')
     #for i in days:
         #print(rows[i])
         #print(log['sleep_time'])
@@ -76,21 +80,20 @@ for f in files:
             rowNum = rowNum +1
             if rowNum > 17: #cuts off useless information at top of each subject's csv
                 trialData.append(a)
-    """trialDataStart = trialData[1]['Time']
-    trialDataStart = trialDataStart[:-3]
-    print(trialDataStart)"""
     trialDataStartTime = datetime.strptime(trialData[1]['Time'], '%H:%M:%S').time()
     dayNum = 0
     for day in days:
         reportedSleepStart = rows[day]['sleep_time']
-        '''reportedSleepStartTime = datetime.strptime(reportedSleepStart, '%H:%M').time()
-        startIndex = datetime.combine(date.min, reportedSleepStartTime) - datetime.combine(date.min, trialDataStartTime)
-        #print(startIndex)'''
         adjustedSleepStart = adjustSleepStart(reportedSleepStart, trialData, dayNum)
         print('adjusted sleep start '+ str(adjustedSleepStart))
         reportedWakeUp = rows[day]['wakeup_time']
         adjustedWakeup = adjustWakeup(reportedWakeUp, trialData, dayNum)
         print('adjusted wakup ' + str(adjustedWakeup))
+        sleepTime = (adjustedWakeup-adjustedSleepStart)/120
+        print('after adjustment, on day '+str(dayNum)+' the subject slept for '+ str(sleepTime) +' hours')
+        totActivity = sumActivity(adjustedSleepStart,adjustedWakeup,trialData)
+        totInactivity = (sleepTime*120)-totActivity
+        sleepEfficiency = totInactivity/(sleepTime*120)
+        print('their total activity was '+str(totActivity)+', reulting in a sleep efficiency score of: '+str(sleepEfficiency)+'\n')
         dayNum = dayNum + 1
-        print('after adjustment, on day '+str(dayNum)+' the subject slept for '+ str((adjustedWakeup-adjustedSleepStart)/120) +' hours')
 x = input('press enter key to close')

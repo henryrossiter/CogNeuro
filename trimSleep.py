@@ -36,20 +36,25 @@ def getTimeIndex(time, subjectData, dayNumber):
         ind = ind+1
     return ind
 def adjustWakeup(reportedWake, subjectData, dayNumber):
-    startIndex = getTimeIndex(reportedWake, subjectData, dayNumber)+1
+    startIndex = getTimeIndex(reportedWake, subjectData, dayNumber)-59
+    endIndex = startIndex+120
     #print("startIndex: "+str(startIndex))
     fiveInRow = False
-    while not(fiveInRow):
-        startIndex = startIndex - 1
+    while (not fiveInRow) and startIndex<endIndex:
+        startIndex = startIndex + 1
         totNextTen = 0
         for i in range(0,10):
             totNextTen = totNextTen + int(subjectData[startIndex-i]['SleepWake'])
-        fiveInRow = (totNextTen == 3)
+        fiveInRow = (totNextTen == 10)
+    if startIndex>=endIndex:
+        print('there was not an instance with 5 minutes of activity within 30 minutes of wakup time')
     return startIndex
 
 files = [f for f in os.listdir('.') if os.path.isfile(f)]
 files.remove('redcap_sleepsurvey.csv')
 files.remove('trimSleep.py')
+if 'Sleep_Efficiency.csv' in files:
+    files.remove('Sleep_Efficiency.csv')
 #for f in files:
 #    print(f)
     # do something
@@ -82,6 +87,7 @@ for f in files:
                 trialData.append(a)
     trialDataStartTime = datetime.strptime(trialData[1]['Time'], '%H:%M:%S').time()
     dayNum = 0
+    efficiencyVals =[]
     for day in days:
         reportedSleepStart = rows[day]['sleep_time']
         adjustedSleepStart = adjustSleepStart(reportedSleepStart, trialData, dayNum)
@@ -95,5 +101,14 @@ for f in files:
         totInactivity = (sleepTime*120)-totActivity
         sleepEfficiency = totInactivity/(sleepTime*120)
         print('their total activity was '+str(totActivity)+', reulting in a sleep efficiency score of: '+str(sleepEfficiency)+'\n')
+        efficiencyVals.append(sleepEfficiency)
         dayNum = dayNum + 1
+        print(efficiencyVals)
+    with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
+        output = csv.writer(csvfile)#"""delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL""")
+        output.writerow(['subject id, day 1, day 2, day 3, day 4, day 5, day 6, day 7'])
+        newRow = [str(num)+',']
+        for i in range(0,len(days)):
+            newRow.append( str(efficiencyVals[i])+',' )
+        output.writerow(newRow)
 x = input('press enter key to close')

@@ -65,50 +65,52 @@ with open('redcap_sleepsurvey.csv', newline='') as csvfile:
     for a in log:
         rows.append(a)
 #go through each subject's csv sheet
-for f in files:
-    #trialData is a list of orderedDicts
-    #each index of trialData will correspond with the 'line' column on the subject's csv sheet
-    trialData = []
-    #find subject number
-    num = int(f[3:f.find('_')])
-    #find trial length
-    days = getIndexes(num)
-    print('subject number: '+str(num)+' trial length: '+str(len(days))+' nights.'+'\n')
-    #for i in days:
-        #print(rows[i])
-        #print(log['sleep_time'])
-    fieldNames = ['Line','Date','Time','Activity','Marker','WhiteLight','SleepWake','IntervalStatus']
-    with open(f, newline='') as csvtrialfile:
-        trial = csv.DictReader(csvtrialfile,fieldNames)
-        rowNum = 0
-        for a in trial:
-            rowNum = rowNum +1
-            if rowNum > 17: #cuts off useless information at top of each subject's csv
-                trialData.append(a)
-    trialDataStartTime = datetime.strptime(trialData[1]['Time'], '%H:%M:%S').time()
-    dayNum = 0
-    efficiencyVals =[]
-    for day in days:
-        reportedSleepStart = rows[day]['sleep_time']
-        adjustedSleepStart = adjustSleepStart(reportedSleepStart, trialData, dayNum)
-        print('adjusted sleep start '+ str(adjustedSleepStart))
-        reportedWakeUp = rows[day]['wakeup_time']
-        adjustedWakeup = adjustWakeup(reportedWakeUp, trialData, dayNum)
-        print('adjusted wakup ' + str(adjustedWakeup))
-        sleepTime = (adjustedWakeup-adjustedSleepStart)/120
-        print('after adjustment, on day '+str(dayNum)+' the subject slept for '+ str(sleepTime) +' hours')
-        totActivity = sumActivity(adjustedSleepStart,adjustedWakeup,trialData)
-        totInactivity = (sleepTime*120)-totActivity
-        sleepEfficiency = totInactivity/(sleepTime*120)
-        print('their total activity was '+str(totActivity)+', reulting in a sleep efficiency score of: '+str(sleepEfficiency)+'\n')
-        efficiencyVals.append(sleepEfficiency)
-        dayNum = dayNum + 1
-        print(efficiencyVals)
-    with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
-        output = csv.writer(csvfile)#"""delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL""")
-        output.writerow(['subject id, day 1, day 2, day 3, day 4, day 5, day 6, day 7'])
-        newRow = [str(num)+',']
+with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
+    output = csv.writer(csvfile)#"""delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL""")
+    output.writerow(['subject id', 'day 1', 'day 2', 'day 3', 'day 4', 'day 5', 'day 6', 'day 7'])
+    for f in files:
+        #trialData is a list of orderedDicts
+        #each index of trialData will correspond with the 'line' column on the subject's csv sheet
+        trialData = []
+        #find subject number
+        num = int(f[3:f.find('_')])
+        #find trial length
+        days = getIndexes(num)
+        print('subject number: '+str(num)+' trial length: '+str(len(days))+' nights.'+'\n')
+        #for i in days:
+            #print(rows[i])
+            #print(log['sleep_time'])
+        fieldNames = ['Line','Date','Time','Activity','Marker','WhiteLight','SleepWake','IntervalStatus']
+        with open(f, newline='') as csvtrialfile:
+            trial = csv.DictReader(csvtrialfile,fieldNames)
+            rowNum = 0
+            for a in trial:
+                rowNum = rowNum +1
+                if rowNum > 17: #cuts off useless information at top of each subject's csv
+                    trialData.append(a)
+        trialDataStartTime = datetime.strptime(trialData[1]['Time'], '%H:%M:%S').time()
+        dayNum = 0
+        efficiencyVals =[]
+        for day in days:
+            reportedSleepStart = rows[day]['sleep_time']
+            adjustedSleepStart = adjustSleepStart(reportedSleepStart, trialData, dayNum)
+            #print('adjusted sleep start '+ str(adjustedSleepStart))
+            reportedWakeUp = rows[day]['wakeup_time']
+            adjustedWakeup = adjustWakeup(reportedWakeUp, trialData, dayNum)
+            #print('adjusted wakup ' + str(adjustedWakeup))
+            sleepTime = (adjustedWakeup-adjustedSleepStart)/120
+            #print('after adjustment, on day '+str(dayNum)+' the subject slept for '+ str(sleepTime) +' hours')
+            totActivity = sumActivity(adjustedSleepStart,adjustedWakeup,trialData)
+            totInactivity = (sleepTime*120)-totActivity
+            sleepEfficiency = totInactivity/(sleepTime*120)
+            #print('their total activity was '+str(totActivity)+', reulting in a sleep efficiency score of: '+str(sleepEfficiency)+'\n')
+            efficiencyVals.append(sleepEfficiency)
+            dayNum = dayNum + 1
+            print(efficiencyVals)
+
+
+        newRow = [str(num)]
         for i in range(0,len(days)):
-            newRow.append( str(efficiencyVals[i])+',' )
+            newRow.append( str(efficiencyVals[i]))
         output.writerow(newRow)
 x = input('press enter key to close')

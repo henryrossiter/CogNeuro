@@ -1,7 +1,8 @@
 import csv
 import os
 from datetime import datetime, date
-#returns a list of the indexes of redcap_sleepsurvey that correspont th subject (num)'s sleep data
+
+#returns a list of the indexes of redcap_sleepsurvey that correspont the subject (num)'s sleep data
 def getIndexes(num):
     ret = []
     with open('redcap_sleepsurvey.csv', newline='') as csvfile:
@@ -12,14 +13,18 @@ def getIndexes(num):
                 ret.append(count)
             count = count + 1
         return ret
+    
+#returns int sum of activity values  for [sleepStartIndex, Wake Index] and orderedDict subjectData    
 def sumActivity(sleepStartIndex,WakeIndex,subjectData):
     tot = 0
     for i in range(sleepStartIndex,WakeIndex+1):
         tot = tot+ int(subjectData[i]['SleepWake'])
     return tot
+
+# adjusts sleep start time based to the first instance of five straight minutes of sleep, based on actigraphs
+# automatically computed sleep/wake output
 def adjustSleepStart(reportedStart, subjectData, dayNumber):
     startIndex = getTimeIndex(reportedStart, subjectData, dayNumber)-1
-    #print("startIndex: "+str(startIndex))
     fiveInRow = False
     while not(fiveInRow):
         startIndex = startIndex + 1
@@ -28,13 +33,17 @@ def adjustSleepStart(reportedStart, subjectData, dayNumber):
             totNextTen = totNextTen + int(subjectData[startIndex+i]['SleepWake'])
         fiveInRow = (totNextTen == 0)
     return startIndex
+
+# finds index in orderedDict subjectData given a dayNumber int and a time in format HH:MM:SS or H:MM:SS
 def getTimeIndex(time, subjectData, dayNumber):
     ind = dayNumber * 2880
-    if time[1:2] == ':':
+    if time[1:2] == ':': #handle discrepancy of time format
         time = "0"+time
     while not subjectData[ind]['Time'][:-3] == time:
         ind = ind+1
     return ind
+
+
 def adjustWakeup(reportedWake, subjectData, dayNumber):
     startIndex = getTimeIndex(reportedWake, subjectData, dayNumber)-59
     endIndex = startIndex+120

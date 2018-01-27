@@ -1,3 +1,5 @@
+#trims actigraph data in order to calculate sleep efficiency
+#Henry Rossiter
 import csv
 import os
 from datetime import datetime, date
@@ -43,11 +45,10 @@ def getTimeIndex(time, subjectData, dayNumber):
         ind = ind+1
     return ind
 
-
+#returns 'adjusted' sleep start index. 'adjusted' time is set by finding the first 10 consecutive epochs of wake values after reported wake time
 def adjustWakeup(reportedWake, subjectData, dayNumber):
     startIndex = getTimeIndex(reportedWake, subjectData, dayNumber)-59
     endIndex = startIndex+120
-    #print("startIndex: "+str(startIndex))
     fiveInRow = False
     while (not fiveInRow) and startIndex<endIndex:
         startIndex = startIndex + 1
@@ -64,18 +65,17 @@ files.remove('redcap_sleepsurvey.csv')
 files.remove('trimSleep.py')
 if 'Sleep_Efficiency.csv' in files:
     files.remove('Sleep_Efficiency.csv')
-#for f in files:
-#    print(f)
-    # do something
+
 #rows is a list of orderedDicts
 rows = []
 with open('redcap_sleepsurvey.csv', newline='') as csvfile:
     log = csv.DictReader(csvfile)
     for a in log:
         rows.append(a)
+        
 #go through each subject's csv sheet
 with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
-    output = csv.writer(csvfile)#"""delimiter=' ',quotechar='|', quoting=csv.QUOTE_MINIMAL""")
+    output = csv.writer(csvfile)
     output.writerow(['subject id', 'day 1', 'day 2', 'day 3', 'day 4', 'day 5', 'day 6', 'day 7'])
     for f in files:
         #trialData is a list of orderedDicts
@@ -86,9 +86,8 @@ with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
         #find trial length
         days = getIndexes(num)
         print('subject number: '+str(num)+' trial length: '+str(len(days))+' nights.'+'\n')
-        #for i in days:
-            #print(rows[i])
-            #print(log['sleep_time'])
+        
+        # column titles for new csv to be outputted
         fieldNames = ['Line','Date','Time','Activity','Marker','WhiteLight','SleepWake','IntervalStatus']
         with open(f, newline='') as csvtrialfile:
             trial = csv.DictReader(csvtrialfile,fieldNames)
@@ -97,9 +96,9 @@ with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
                 rowNum = rowNum +1
                 if rowNum > 17: #cuts off useless information at top of each subject's csv
                     trialData.append(a)
-        trialDataStartTime = datetime.strptime(trialData[1]['Time'], '%H:%M:%S').time()
         dayNum = 0
-        efficiencyVals =[]
+        efficiencyVals =[] # array of the current subject's calculated sleep efficiencies
+        #iterates through each day in the subject's file, adjusting sleep times and calculating sleep efficiency
         for day in days:
             reportedSleepStart = rows[day]['sleep_time']
             adjustedSleepStart = adjustSleepStart(reportedSleepStart, trialData, dayNum)

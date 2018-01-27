@@ -1,8 +1,9 @@
 #trims actigraph data in order to calculate sleep efficiency
+#outputs calculated sleep efficiencies to 'Sleep_Efficiency.csv'
 #Henry Rossiter
+
 import csv
 import os
-from datetime import datetime, date
 
 #returns a list of the indexes of redcap_sleepsurvey that correspont the subject (num)'s sleep data
 def getIndexes(num):
@@ -15,8 +16,8 @@ def getIndexes(num):
                 ret.append(count)
             count = count + 1
         return ret
-    
-#returns int sum of activity values  for [sleepStartIndex, Wake Index] and orderedDict subjectData    
+
+#returns int sum of activity values  for [sleepStartIndex, Wake Index] and orderedDict subjectData
 def sumActivity(sleepStartIndex,WakeIndex,subjectData):
     tot = 0
     for i in range(sleepStartIndex,WakeIndex+1):
@@ -45,7 +46,7 @@ def getTimeIndex(time, subjectData, dayNumber):
         ind = ind+1
     return ind
 
-#returns 'adjusted' sleep start index. 'adjusted' time is set by finding the first 10 consecutive epochs of wake values after reported wake time
+# returns 'adjusted' sleep start index. 'adjusted' time is set by finding the first 10 consecutive epochs of wake values after reported wake time
 def adjustWakeup(reportedWake, subjectData, dayNumber):
     startIndex = getTimeIndex(reportedWake, subjectData, dayNumber)-59
     endIndex = startIndex+120
@@ -55,28 +56,26 @@ def adjustWakeup(reportedWake, subjectData, dayNumber):
         totNextTen = 0
         for i in range(0,10):
             totNextTen = totNextTen + int(subjectData[startIndex-i]['SleepWake'])
-        fiveInRow = (totNextTen == 10)
+        fiveInRow = (totNextTen == 6)
     if startIndex>=endIndex:
-        print('there was not an instance with 5 minutes of activity within 30 minutes of wakup time')
+        print('there was not an instance with substantial activity within 30 minutes of wakeup time')
     return startIndex
 
-files = [f for f in os.listdir('.') if os.path.isfile(f)]
-files.remove('redcap_sleepsurvey.csv')
-files.remove('trimSleep.py')
-if 'Sleep_Efficiency.csv' in files:
-    files.remove('Sleep_Efficiency.csv')
+#Gather all subject actigraph data files in directory
+files = [f for f in os.listdir('.') if f.endswith('Analysis.csv')]
 
 #rows is a list of orderedDicts
 rows = []
 with open('redcap_sleepsurvey.csv', newline='') as csvfile:
+    #log is a dictreader, creates (nSubjects x nDayspersubject) orderedDicts
     log = csv.DictReader(csvfile)
     for a in log:
         rows.append(a)
-        
-#go through each subject's csv sheet
+
+#make new output file to record calculated sleep efficiencies
 with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
     output = csv.writer(csvfile)
-    output.writerow(['subject id', 'day 1', 'day 2', 'day 3', 'day 4', 'day 5', 'day 6', 'day 7'])
+    output.writerow(['subject id', 'day 1', 'day 2', 'day 3', 'day 4', 'day 5', 'day 6', 'day 7']) #column titles for output csv file
     for f in files:
         #trialData is a list of orderedDicts
         #each index of trialData will correspond with the 'line' column on the subject's csv sheet
@@ -86,18 +85,24 @@ with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
         #find trial length
         days = getIndexes(num)
         print('subject number: '+str(num)+' trial length: '+str(len(days))+' nights.'+'\n')
-        
+
         # column titles for new csv to be outputted
         fieldNames = ['Line','Date','Time','Activity','Marker','WhiteLight','SleepWake','IntervalStatus']
         with open(f, newline='') as csvtrialfile:
             trial = csv.DictReader(csvtrialfile,fieldNames)
             rowNum = 0
             for a in trial:
-                rowNum = rowNum +1
-                if rowNum > 17: #cuts off useless information at top of each subject's csv
+                if (a['Marker']=='0'): #use this to cut of meta data when copying to trialData
                     trialData.append(a)
-        dayNum = 0
+
+        dayNum = 0  #reset day index for new participant
         efficiencyVals =[] # array of the current subject's calculated sleep efficiencies
+
+        #find subject number
+        num = int(f[3:f.find('_')])
+        #find trial length
+        days = getIndexes(num)
+        print('subject number: '+str(num)+' trial length: '+str(len(days))+' nights.'+'\n')
         #iterates through each day in the subject's file, adjusting sleep times and calculating sleep efficiency
         for day in days:
             reportedSleepStart = rows[day]['sleep_time']
@@ -116,9 +121,12 @@ with open('Sleep_Efficiency.csv', 'w', newline='') as csvfile:
             dayNum = dayNum + 1
             print(efficiencyVals)
 
-
+        #make array of subject number and sleep efficiency values
         newRow = [str(num)]
         for i in range(0,len(days)):
             newRow.append( str(efficiencyVals[i]))
+        #add newRow array to output csv file
         output.writerow(newRow)
+
+#allows user to see error messages when ran from python shell
 x = input('press enter key to close')

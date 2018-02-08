@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 24 11:41:41 2017
-@file: actigraph.py
-@author: sr38553
-@questions: semeon.risom@gmail.com
-@description: imports actigraph data (csv), removes metadata, reformats date, and saves as new output (csv)
+Henry Rossiter
+henry.rossiter@utexas.edu 
 
-this version uses a csv file from redcap to trim the data to the time that the watch was taken off
+This program reformats and trims actigraph data:
+ -removes all NaN values at the beginning and end of data file
+ -linearly interpolates up to 3 consecutive NaN values in the middle of the file
+ -trims additional data off end of file if necessary
 
 date should be in YYYY-MM-DD HH:MM:SS or YYYY/MM/DD HH:MM:SS format
 @notes: http://strftime.org/

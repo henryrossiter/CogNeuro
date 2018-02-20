@@ -1,3 +1,3 @@
-# SleepEfficiency
+# CogNeuro
 
-A collection of scripts written for the UT Cognitive Neuroscience Lab
+A collection of software written for the UT Cognitive Neuroscience Lab

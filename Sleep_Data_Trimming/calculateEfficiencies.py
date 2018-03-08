@@ -29,7 +29,7 @@ def sumActivity(sleepStartIndex,WakeIndex,subjectData):
 		tot = tot+ int(subjectData[i]['SleepWake'])
 	return tot
 
-# adjusts sleep start time based to the first instance of five straight minutes of sleep, based on actigraphs
+# adjusts sleep start time based to the first instance of five minutes with at least 60% sleep values, based on actigraphs
 # automatically computed sleep/wake output
 def adjustSleepStart(reportedStart, subjectData, dayNumber):
 	startIndex = getTimeIndex(reportedStart, subjectData, dayNumber)-1
@@ -39,7 +39,7 @@ def adjustSleepStart(reportedStart, subjectData, dayNumber):
 		totNextTen = 0
 		for i in range(0,10):
 			totNextTen = totNextTen + int(subjectData[startIndex+i]['SleepWake'])
-		fiveInRow = (totNextTen == 0)
+		fiveInRow = (totNextTen <= 4)
 	return startIndex
 
 # finds index in orderedDict subjectData given a dayNumber int and a time string in format HH:MM:SS or H:MM:SS
@@ -56,7 +56,7 @@ def getTimeIndex(time, subjectData, dayNumber):
 			sys.exit(1)
 	return ind
 
-# returns 'adjusted' sleep start index. 'adjusted' time is set by finding the first 10 consecutive epochs of wake values after reported wake time
+# returns 'adjusted' sleep start index. 'adjusted' time is set by finding the first instance of five minutes with at least 60% wake values
 def adjustWakeup(reportedWake, subjectData, dayNumber):
 	startIndex = getTimeIndex(reportedWake, subjectData, dayNumber)-59
 	endIndex = startIndex+120
@@ -66,7 +66,7 @@ def adjustWakeup(reportedWake, subjectData, dayNumber):
 		totNextTen = 0
 		for i in range(0,10):
 			totNextTen = totNextTen + int(subjectData[startIndex-i]['SleepWake'])
-		fiveInRow = (totNextTen == 6)
+		fiveInRow = (totNextTen >= 6)
 	if startIndex>=endIndex:
 		print('there was not an instance with substantial activity within 30 minutes of wakeup time')
 	return startIndex

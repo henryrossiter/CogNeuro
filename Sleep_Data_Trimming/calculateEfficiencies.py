@@ -4,6 +4,7 @@
 
 import csv
 import os
+import sys
 
 #returns a list of the indexes of redcap_sleepsurvey that correspont the subject (num)'s sleep data
 def getIndexes(num):

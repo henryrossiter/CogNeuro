@@ -2,92 +2,35 @@
 converts actigraph output files to files necessary to calculate sleep efficiency
 this version for python 2
 """
-#logging
-import logging as errorlog
-import os  # handy system and path functions
-from subprocess import check_output
-import sys
+import pip
 
-#set up logging to file
-errorlog.basicConfig(
-    filename='error.log',
-    filemode='w',
-    level=errorlog.WARNING,
-    format='%(asctime)s %(levelname)s %(name)s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S')
-
-logger=errorlog.getLogger(__name__)
-
-import platform
-
-def cpu():
-    try:
-        cputype = get_registry_value(
-            "HKEY_LOCAL_MACHINE",
-            "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
-            "ProcessorNameString")
-    except:
-        try:
-            import wmi
-            import pythoncom
-        except ImportError:
-            import pip
-            pip.main(['install', 'pythoncom'])
-            pip.main(['install', 'wmi'])
-            import pythoncom
-            import wmi
-        pythoncom.CoInitialize()
-        c = wmi.WMI()
-        for i in c.Win32_Processor ():
-            cputype = i.Name
-        pythoncom.CoUninitialize()
-
-    if cputype == 'AMD Athlon(tm)':
-        c = wmi.WMI()
-        for i in c.Win32_Processor ():
-            cpuspeed = i.MaxClockSpeed
-        cputype = 'AMD Athlon(tm) %.2f Ghz' % (cpuspeed / 1000.0)
-    elif cputype == 'AMD Athlon(tm) Processor':
-        try:
-            import wmi
-        except ImportError:
-            import pip
-            pip.main(['install', 'wmi'])
-            import wmi
-        c = wmi.WMI()
-        for i in c.Win32_Processor ():
-            cpuspeed = i.MaxClockSpeed
-        cputype = 'AMD Athlon(tm) %s' % cpuspeed
-    else:
-        pass
-    return cputype
-
-log_system = platform.system() +" " + platform.win32_ver()[0]#windows 7
-log_cpu = cpu() #cpu
-#log_video = subprocess.Popen('cmd.exe', stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-log_video = check_output("wmic path win32_VideoController get VideoProcessor")
-log_video = (' '.join(log_video.split())).replace("VideoProcessor ","")
-
-errorlog.error(log_system)
-errorlog.error(log_cpu)
-errorlog.error(log_video)
+#manage dependencies
+try:
+    import os
+except ImportError:
+    pip.main(['install', 'os'])
+    import os
+try:
+    import pandas
+except ImportError:
+    pip.main(['install', 'pandas'])
+    import pandas
+try:
+    import datetime
+except ImportError:
+    pip.main(['install', 'datetime'])
+    import datetime
+try:
+    import sys
+except ImportError:
+    pip.main(['install', 'sys'])
+    import sys
 
 while True:
     try:
-        try:
-            import pandas
-            import datetime
-        except ImportError:
-            import pip
-            pip.main(['install', 'pandas'])
-            pip.main(['install', 'datetime'])
-            import pandas
-            import datetime
-
         try: #use _file_ in most cases
             dir = os.path.dirname(__file__)
         except NameError:  #except when running python from py2exe script
-            import sys
             dir = os.path.dirname(sys.argv[0])
 
         #directory
